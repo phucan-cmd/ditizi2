@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xem video</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0f0f14;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    text-align: center;
+    max-width: 720px;
+    width: 100%;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  p.sub { color: #aaa; margin-bottom: 24px; }
+
+  /* Hộp xác nhận */
+  #modal {
+    background: #1a1a22;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 32px 24px;
+  }
+  #modal .icon { font-size: 3rem; margin-bottom: 12px; }
+  #modal h2 { margin-bottom: 8px; }
+  #modal p { color: #aaa; margin-bottom: 24px; }
+  .btn-row { display: flex; gap: 12px; justify-content: center; }
+  button {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.25s ease, opacity 0.25s ease, left 0.3s ease, top 0.3s ease;
+  }
+  .btn-yes { background: #e62117; color: #fff; }
+  .btn-yes:hover { background: #c11a12; }
+  .btn-no { background: #333; color: #fff; }
+  .btn-no:hover { background: #444; }
+
+  /* Video */
+  #player { display: none; }
+  #player video, #player iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    background: #000;
+    border: none;
+  }
+  #back { margin-top: 16px; background: transparent; color: #888; font-size: 0.9rem; }
+  #back:hover { color: #fff; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Hộp xác nhận hiện ngay khi mở link -->
+  <div id="modal">
+    <div class="icon">🎬</div>
+    <h2>Bạn có muốn xem video không?</h2>
+    <p>Nhấn "Xem ngay" để bắt đầu phát video.</p>
+    <div class="btn-row">
+      <button class="btn-yes" onclick="xemVideo()">Xem ngay</button>
+      <button class="btn-no" onclick="khongXem()">Không</button>
+    </div>
+  </div>
+
+  <!-- Khung phát video (ẩn cho đến khi bấm Xem ngay) -->
+  <div id="player">
+    <!--
+      ĐỔI VIDEO Ở ĐÂY:
+      - Cách 1: để file video cùng thư mục với file này trên GitHub,
+               rồi sửa video.mp4 thành tên file của bạn (vd: myvideo.mp4)
+      - Cách 2: dùng video YouTube thì XÓA thẻ <video>...</video> bên dưới
+               và thay bằng dòng này (thay ID_VIDEO bằng id thật):
+               <iframe src="https://www.youtube.com/embed/ID_VIDEO" allowfullscreen></iframe>
+    -->
+    <video id="vid" controls playsinline>
+      <source src="video.mp4" type="video/mp4">
+      Trình duyệt của bạn không hỗ trợ phát video.
+    </video>
+    <br>
+    <button id="back" onclick="quayLai()">← Quay lại</button>
+  </div>
+
+</div>
+
+<script>
+  function xemVideo() {
+    document.getElementById("modal").style.display = "none";
+    document.getElementById("player").style.display = "block";
+    // Tự phát luôn (trình duyệt cho phép vì người dùng vừa bấm nút)
+    var v = document.getElementById("vid");
+    if (v && v.play) v.play().catch(function(){});
+  }
+  // Trò troll: bấm "Không" càng nhiều, nút "Xem ngay" càng to, nút "Không" càng teo
+  var cauHoi = [
+    "Bạn có chắc chắn không?",
+    "Chắc chắn thật không đấy?",
+    "Suy nghĩ lại đi mà 🥺",
+    "Nút Không sắp biến mất rồi kìa!",
+    "Cố nữa cũng vô ích thôi 😏"
+  ];
+  var demKhong = 0;
+  function khongXem() {
+    demKhong++;
+    var yesBtn = document.querySelector(".btn-yes");
+    var noBtn = document.querySelector(".btn-no");
+    // Đổi câu hỏi mỗi lần bấm
+    document.querySelector("#modal h2").textContent =
+      cauHoi[Math.min(demKhong - 1, cauHoi.length - 1)];
+    // Nút Có phình theo cấp số nhân (5x mỗi lần) — che hết cả web
+    yesBtn.style.position = "relative";
+    yesBtn.style.zIndex = "1001";
+    yesBtn.style.transform = "scale(" + Math.pow(5, demKhong) + ")";
+    var coNo = Math.max(1 - demKhong * 0.2, 0);
+    noBtn.style.transform = "scale(" + coNo + ")";
+    // Nhảy tới vị trí ngẫu nhiên trên màn hình — đố bấm trúng
+    noBtn.style.position = "fixed";
+    noBtn.style.zIndex = "999";
+    var maxX = window.innerWidth - noBtn.offsetWidth - 10;
+    var maxY = window.innerHeight - noBtn.offsetHeight - 10;
+    noBtn.style.left = Math.max(10, Math.random() * maxX) + "px";
+    noBtn.style.top = Math.max(10, Math.random() * maxY) + "px";
+    // Bé quá thì cho biến mất luôn, khỏi bấm được nữa
+    if (coNo < 0.15) {
+      noBtn.style.pointerEvents = "none";
+      noBtn.style.opacity = "0";
+    }
+  }
+  function quayLai() {
+    var v = document.getElementById("vid");
+    if (v && v.pause) v.pause();
+    document.getElementById("player").style.display = "none";
+    document.getElementById("modal").style.display = "block";
+    // Reset trò troll về ban đầu
+    demKhong = 0;
+    var yesBtn = document.querySelector(".btn-yes");
+    var noBtn = document.querySelector(".btn-no");
+    yesBtn.style.transform = "scale(1)";
+    yesBtn.style.position = "";
+    yesBtn.style.zIndex = "";
+    noBtn.style.transform = "scale(1)";
+    noBtn.style.pointerEvents = "auto";
+    noBtn.style.opacity = "1";
+    noBtn.style.position = "";
+    noBtn.style.left = "";
+    noBtn.style.top = "";
+    noBtn.style.zIndex = "";
+    document.querySelector("#modal h2").textContent = "Bạn có muốn xem video không?";
+    document.querySelector("#modal p").textContent = 'Nhấn "Xem ngay" để bắt đầu phát video.';
+  }
+</script>
+</body>
+</html>
